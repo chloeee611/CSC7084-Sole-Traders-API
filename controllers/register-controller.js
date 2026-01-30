@@ -6,13 +6,15 @@ exports.postRegister = (req, res) => {
     const { name, username, email, password, confirmPassword } = req.body;
 
     if (password !== confirmPassword) {
-        return res.render("client/register", {
-            error: "Passwords do not match",
+        res.status(400);
+        res.json({
+            message: "Passwords do not match",
         });
+        return;
     }
 
     bcrypt.hash(password, SALT_WORK_FACTOR, (err, hashedPassword) => {
-        const insertSQL = `INSERT INTO traders (name, username, email, password, trade_type, region, availability, bio)
+        const insertSQL = `INSERT INTO traders (name, username, email, password, trade_type_id, region, availability, bio)
             VALUES (?, ?, ?, ?, NULL, NULL, NULL, NULL)`;
 
         conn.query(
@@ -22,7 +24,10 @@ exports.postRegister = (req, res) => {
                 if (err) {
                     throw err;
                 } else {
-                    res.redirect("/trader-login?registered=1");
+                    res.status(201);
+                    res.json({
+                        message: "Trader successfully registered",
+                    });
                 }
             },
         );

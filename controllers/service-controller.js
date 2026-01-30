@@ -27,7 +27,7 @@ exports.getService = (req, res) => {
     const selectSQL = `        
         SELECT * 
         FROM services 
-        WHERE trader_id = ${serviceId}
+        WHERE service_id = ${serviceId}
         `;
 
     conn.query(selectSQL, (err, rows) => {

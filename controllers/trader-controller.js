@@ -3,10 +3,11 @@ const conn = require("../utils/dbconn");
 //#region Trader
 
 exports.getAllTraders = (req, res) => {
+    // TODO: pick all fields except password. Dunno if that means picking them all manually or if there's a smart MySQL way to do that
     const selectSQL = `
         SELECT * 
         FROM traders 
-        INNER JOIN trade_types
+        LEFT JOIN trade_types
         ON traders.trade_type_id = trade_types.trade_type_id
         `;
     // TODO: add has_profile to trader
@@ -36,7 +37,7 @@ exports.getTrader = (req, res) => {
     const selectSQL = `        
         SELECT * 
         FROM traders 
-        INNER JOIN trade_types
+        LEFT JOIN trade_types
         ON traders.trade_type_id = trade_types.trade_type_id 
         WHERE trader_id = ${traderId}
         `;

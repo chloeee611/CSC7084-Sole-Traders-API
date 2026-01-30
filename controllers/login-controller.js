@@ -12,28 +12,38 @@ exports.postLogin = (req, res) => {
         const numrows = rows.length;
 
         if (numrows === 0) {
-            return res.redirect("/trader-login");
+            res.status(401);
+            res.json({
+                message: "Invalid login credentials",
+            });
+            return;
         }
 
         const trader = rows[0];
 
-        console.log(trader);
-
         bcrypt.compare(password, trader.password, (err2, match) => {
             if (err2) {
-                console.error(err2);
-                return res.redirect("/trader-login");
+                res.status(500);
+                res.json({
+                    message: err2,
+                });
+                return;
             }
 
             // Password incorrect
             if (!match) {
-                return res.redirect("/trader-login");
+                res.status(401);
+                res.json({
+                    message: "Invalid login credentials",
+                });
+                return;
             }
 
             // Password correct
-            req.session.isloggedin = true;
-            req.session.traderId = trader.trader_id;
-            res.redirect("/trader-profile");
+            res.status(200);
+            res.json({
+                traderId: trader.trader_id,
+            });
         });
     });
 };
