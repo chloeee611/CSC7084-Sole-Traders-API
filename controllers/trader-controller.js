@@ -38,7 +38,7 @@ exports.getTrader = (req, res) => {
         SELECT * 
         FROM traders 
         LEFT JOIN trade_types
-        ON traders.trade_type_id = trade_types.trade_type_id 
+        ON traders.trade_type_id = trade_types.trade_type_id
         WHERE trader_id = ${traderId}
         `;
 
@@ -79,7 +79,7 @@ exports.putTraderDetails = (req, res) => {
                 });
             } else {
                 if (rows.affectedRows > 0) {
-                    res.status(201);
+                    res.status(200);
                     res.json({
                         status: "success",
                         message: `Record ID ${traderId} updated`,
@@ -163,7 +163,7 @@ exports.putServiceForTrader = (req, res) => {
                 });
             } else {
                 if (rows.affectedRows > 0) {
-                    res.status(201);
+                    res.status(200);
                     res.json({
                         status: "success",
                         message: `Record ID ${serviceId} updated`,

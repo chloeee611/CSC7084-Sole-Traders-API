@@ -52,10 +52,6 @@ exports.postService = (req, res) => {
     const { traderId } = req.params;
     const { title, description, pricingType, basePrice } = req.body;
 
-    if (!isloggedin) {
-        res.redirect("/trader-login");
-    }
-
     const insertSQL = `INSERT INTO services (title, description, pricing_type, base_price, trader_id)
             VALUES (?, ?, ?, ?, ?)`;
 
@@ -64,9 +60,17 @@ exports.postService = (req, res) => {
         [title, description, pricingType, basePrice, traderId],
         (err, rows) => {
             if (err) {
-                throw err;
+                res.status(500);
+                res.json({
+                    status: "failure",
+                    message: err,
+                });
             } else {
-                res.redirect(`/trader-services`);
+                res.status(201);
+                res.json({
+                    status: "success",
+                    message: `Record created`,
+                });
             }
         },
     );
@@ -77,7 +81,7 @@ exports.putService = (req, res) => {
     const { title, description, pricingType, basePrice } = req.body;
 
     const updateSQL = `
-    UPDATE services SET title = ?, description = ?, pricing_type = ?, base_price = ? AND service_id = ?`;
+    UPDATE services SET title = ?, description = ?, pricing_type = ?, base_price = ? WHERE service_id = ?`;
 
     conn.query(
         updateSQL,
