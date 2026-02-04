@@ -1,4 +1,9 @@
 const conn = require("../utils/dbconn");
+const {
+    validateDateTime,
+    validateEmail,
+    validateStatus,
+} = require("../utils/validators");
 
 exports.getAllBookings = (req, res) => {
     const selectSQL = `SELECT * FROM bookings`;
@@ -54,14 +59,42 @@ exports.postBooking = (req, res) => {
         clientName,
         clientEmailAddress,
         serviceId,
-        requestedDate,
-        requestedStartTime,
+        requestedDateTime,
         jobDescription,
         status,
     } = req.body;
 
-    const insertSQL = `INSERT INTO bookings (client_name, client_email_address, service_id, requested_date, requested_start_time, job_description, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    if (!validateEmail(clientEmailAddress)) {
+        res.status(400);
+        res.json({
+            status: "failure",
+            message: "Invalid email format",
+        });
+        return;
+    }
+
+    console.log(validateEmail(clientEmailAddress));
+
+    if (!validateDateTime(requestedDateTime)) {
+        res.status(400);
+        res.json({
+            status: "failure",
+            message: "Invalid date and time format",
+        });
+        return;
+    }
+
+    if (!validateStatus(status)) {
+        res.status(400);
+        res.json({
+            status: "failure",
+            message: "Invalid status",
+        });
+        return;
+    }
+
+    const insertSQL = `INSERT INTO bookings (client_name, client_email_address, service_id, requested_date_time, job_description, status)
+            VALUES (?, ?, ?, ?, ?, ?)`;
 
     conn.query(
         insertSQL,
@@ -69,8 +102,7 @@ exports.postBooking = (req, res) => {
             clientName,
             clientEmailAddress,
             serviceId,
-            requestedDate,
-            requestedStartTime,
+            requestedDateTime,
             jobDescription,
             status,
         ],
@@ -103,6 +135,15 @@ exports.putBooking = (req, res) => {
         jobDescription,
         status,
     } = req.body;
+
+    if (!validateStatus(status)) {
+        res.status(400);
+        res.json({
+            status: "failure",
+            message: "Invalid status",
+        });
+        return;
+    }
 
     const updateSQL = `
         UPDATE bookings 
@@ -151,6 +192,15 @@ exports.putBooking = (req, res) => {
 exports.patchBookingStatus = (req, res) => {
     const { bookingId } = req.params;
     const { status } = req.body;
+
+    if (!validateStatus(status)) {
+        res.status(400);
+        res.json({
+            status: "failure",
+            message: "Invalid status",
+        });
+        return;
+    }
 
     const updateSQL = `UPDATE bookings SET status = ? WHERE booking_id = ?`;
 

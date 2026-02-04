@@ -1,27 +1,116 @@
 const conn = require("../utils/dbconn");
 const bcrypt = require("bcrypt");
+const { validatePassword } = require("../utils/validators");
 const SALT_WORK_FACTOR = 10;
 
 exports.postRegister = (req, res) => {
     const { name, username, email, password } = req.body;
 
-    bcrypt.hash(password, SALT_WORK_FACTOR, (err, hashedPassword) => {
-        const insertSQL = `INSERT INTO traders (name, username, email, password, trade_type_id, region, availability, bio)
+    if (!validateRequiredStringField(name)) {
+        res.status(400);
+        res.json({
+            status: "failure",
+            message: "Name is a required field",
+        });
+    }
+
+    if (!validateUsername(username)) {
+        res.status(400);
+        res.json({
+            status: "failure",
+            message: "Username must be at least 4 characters long",
+        });
+    }
+
+    if (!validateEmail(email)) {
+        res.status(400);
+        res.json({
+            status: "failure",
+            message: "Invalid email format",
+        });
+        return;
+    }
+
+    if (!validatePassword(password)) {
+        res.status(400);
+        res.json({
+            status: "failure",
+            message:
+                "Password must have 8 characters, one uppercase, one lowercase, one number, one special character",
+        });
+    }
+
+    const selectUsernameSQL = `SELECT * FROM traders WHERE username = ?`;
+
+    conn.query(selectUsernameSQL, [username], (err, usernameRows) => {
+        if (err) {
+            res.status(500);
+            res.json({
+                status: "failure",
+                message: err,
+            });
+        } else {
+            if (usernameRows.length > 0) {
+                res.status(400);
+                res.json({
+                    status: "failure",
+                    message: "Username already in use",
+                });
+
+                return;
+            }
+
+            const selectEmailSQL = `SELECT * FROM traders WHERE email = ?`;
+
+            conn.query(selectEmailSQL, [email], (err, emailRows) => {
+                if (err) {
+                    res.status(500);
+                    res.json({
+                        status: "failure",
+                        message: err,
+                    });
+                } else {
+                    if (emailRows.length > 0) {
+                        res.status(400);
+                        res.json({
+                            status: "failure",
+                            message: "Email already in use",
+                        });
+
+                        return;
+                    }
+
+                    bcrypt.hash(
+                        password,
+                        SALT_WORK_FACTOR,
+                        (err, hashedPassword) => {
+                            const insertSQL = `INSERT INTO traders (name, username, email, password, trade_type_id, region, availability, bio)
             VALUES (?, ?, ?, ?, NULL, NULL, NULL, NULL)`;
 
-        conn.query(
-            insertSQL,
-            [name, username, email.toLowerCase(), hashedPassword],
-            (err, rows) => {
-                if (err) {
-                    throw err;
-                } else {
-                    res.status(201);
-                    res.json({
-                        message: "Trader successfully registered",
-                    });
+                            conn.query(
+                                insertSQL,
+                                [
+                                    name,
+                                    username,
+                                    email.toLowerCase(),
+                                    hashedPassword,
+                                ],
+                                (err, rows) => {
+                                    if (err) {
+                                        throw err;
+                                    } else {
+                                        res.status(201);
+                                        res.json({
+                                            message:
+                                                "Trader successfully registered",
+                                        });
+                                    }
+                                },
+                            );
+                        },
+                    );
                 }
-            },
-        );
+            });
+        }
     });
 };

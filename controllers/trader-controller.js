@@ -1,4 +1,5 @@
 const conn = require("../utils/dbconn");
+const { validateDateTime, validateEmail } = require("../utils/validators");
 
 //#region Trader
 
@@ -62,14 +63,43 @@ exports.getTrader = (req, res) => {
 
 exports.putTraderDetails = (req, res) => {
     const { traderId } = req.params;
-    const { trade_type, region, availability, bio } = req.body;
+    const { tradeType, region, availability, bio } = req.body;
+
+    //TODO: Validate tradeType
+
+    if (!validateRequiredStringField(region)) {
+        res.status(400);
+        res.json({
+            status: "failure",
+            message: "Please enter your region",
+        });
+        return;
+    }
+
+    if (!validateRequiredStringField(availability)) {
+        res.status(400);
+        res.json({
+            status: "failure",
+            message: "Please enter your availability",
+        });
+        return;
+    }
+
+    if (!validateRequiredStringField(bio)) {
+        res.status(400);
+        res.json({
+            status: "failure",
+            message: "Please enter your bio",
+        });
+        return;
+    }
 
     const updateSQL =
         "UPDATE traders SET trade_type_id = ?, region = ?, availability = ?, bio = ? WHERE trader_id = ?";
 
     conn.query(
         updateSQL,
-        [trade_type, region, availability, bio, traderId],
+        [tradeType, region, availability, bio, traderId],
         (err, rows) => {
             if (err) {
                 res.status(500);
