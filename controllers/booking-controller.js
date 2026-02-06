@@ -73,8 +73,6 @@ exports.postBooking = (req, res) => {
         return;
     }
 
-    console.log(validateEmail(clientEmailAddress));
-
     if (!validateDateTime(requestedDateTime)) {
         res.status(400);
         res.json({
@@ -106,7 +104,7 @@ exports.postBooking = (req, res) => {
             jobDescription,
             status,
         ],
-        (err, rows) => {
+        (err) => {
             if (err) {
                 res.status(500);
                 res.json({

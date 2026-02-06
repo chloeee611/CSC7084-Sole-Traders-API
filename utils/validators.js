@@ -2,7 +2,7 @@
 
 exports.validateRequiredStringField = (inputStringField) =>
     inputStringField &&
-    typeof inputStatusString === "string" &&
+    typeof inputStringField === "string" &&
     String(inputStringField).trim() !== "";
 
 exports.validateRequiredNumberField = (inputNumberField) =>
@@ -13,7 +13,7 @@ exports.validateRequiredNumberField = (inputNumberField) =>
 //#region Field Specific Validators
 
 exports.validateEmail = (inputString) =>
-    //this.validateRequiredStringField(inputString) &&
+    this.validateRequiredStringField(inputString) &&
     String(inputString)
         .toLowerCase()
         .match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/).length > 0;
@@ -41,6 +41,6 @@ exports.validateBookingDate = (inputDateString) =>
 
 exports.validateDateTime = (inputString) =>
     this.validateRequiredStringField(inputString) &&
-    !isNan(Date.parse(inputString));
+    !isNaN(Date.parse(inputString));
 
 //#endregion

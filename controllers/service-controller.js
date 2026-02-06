@@ -58,7 +58,7 @@ exports.postService = (req, res) => {
     conn.query(
         insertSQL,
         [title, description, pricingType, basePrice, traderId],
-        (err, rows) => {
+        (err) => {
             if (err) {
                 res.status(500);
                 res.json({

@@ -1,5 +1,5 @@
 const conn = require("../utils/dbconn");
-const { validateDateTime, validateEmail } = require("../utils/validators");
+const { validateRequiredStringField } = require("../utils/validators");
 
 //#region Trader
 

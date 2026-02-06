@@ -1,43 +1,47 @@
 const conn = require("../utils/dbconn");
 const bcrypt = require("bcrypt");
-const { validatePassword } = require("../utils/validators");
+const {
+    validatePassword,
+    validateRequiredStringField,
+    validateUsername,
+    validateEmail,
+} = require("../utils/validators");
 const SALT_WORK_FACTOR = 10;
 
 exports.postRegister = (req, res) => {
-    const { name, username, email, password } = req.body;
+    const { name, username, email, password, confirmPassword } = req.body;
+
+    const validationResults = {};
 
     if (!validateRequiredStringField(name)) {
-        res.status(400);
-        res.json({
-            status: "failure",
-            message: "Name is a required field",
-        });
+        validationResults["name"] = "Name is a required field";
     }
 
     if (!validateUsername(username)) {
-        res.status(400);
-        res.json({
-            status: "failure",
-            message: "Username must be at least 4 characters long",
-        });
+        validationResults["username"] =
+            "Username must be at least 4 characters long";
     }
 
     if (!validateEmail(email)) {
-        res.status(400);
-        res.json({
-            status: "failure",
-            message: "Invalid email format",
-        });
-        return;
+        validationResults["email"] = "Invalid email format";
     }
 
     if (!validatePassword(password)) {
+        validationResults["password"] =
+            "Password must have 8 characters, one uppercase, one lowercase, one number, one special character";
+    }
+
+    if (!validateRequiredStringField(name) || password !== confirmPassword) {
+        validationResults["confirmPassword"] = "Passwords do not match";
+    }
+
+    if (Object.keys(validationResults).length > 0) {
         res.status(400);
         res.json({
             status: "failure",
-            message:
-                "Password must have 8 characters, one uppercase, one lowercase, one number, one special character",
+            validationResults,
         });
+        return;
     }
 
     const selectUsernameSQL = `SELECT * FROM traders WHERE username = ?`;
@@ -95,7 +99,7 @@ exports.postRegister = (req, res) => {
                                     email.toLowerCase(),
                                     hashedPassword,
                                 ],
-                                (err, rows) => {
+                                (err) => {
                                     if (err) {
                                         throw err;
                                     } else {
