@@ -1,5 +1,9 @@
 const conn = require("../utils/dbconn");
-const { validateRequiredStringField } = require("../utils/validators");
+const {
+    validateRequiredStringField,
+    validateRequiredNumberField,
+    validatePricingType,
+} = require("../utils/validators");
 
 //#region Trader
 
@@ -50,6 +54,12 @@ exports.getTrader = (req, res) => {
                 status: "failure",
                 message: err,
             });
+        } else if (rows.length === 0) {
+            res.status(404);
+            res.json({
+                status: "failure",
+                message: "Trader does not exist",
+            });
         } else {
             res.status(200);
             res.json({
@@ -65,65 +75,80 @@ exports.putTraderDetails = (req, res) => {
     const { traderId } = req.params;
     const { tradeType, region, availability, bio } = req.body;
 
-    //TODO: Validate tradeType
+    const validationResults = {};
 
     if (!validateRequiredStringField(region)) {
-        res.status(400);
-        res.json({
-            status: "failure",
-            message: "Please enter your region",
-        });
-        return;
+        validationResults["region"] = "Region is a required field";
     }
 
     if (!validateRequiredStringField(availability)) {
-        res.status(400);
-        res.json({
-            status: "failure",
-            message: "Please enter your availability",
-        });
-        return;
+        validationResults["availability"] = "Availability is a required field";
     }
 
     if (!validateRequiredStringField(bio)) {
-        res.status(400);
-        res.json({
-            status: "failure",
-            message: "Please enter your bio",
-        });
-        return;
+        validationResults["bio"] = "Bio is a required field";
     }
 
-    const updateSQL =
-        "UPDATE traders SET trade_type_id = ?, region = ?, availability = ?, bio = ? WHERE trader_id = ?";
+    const tradeTypeSQL = "SELECT trade_type_id FROM trade_types";
 
-    conn.query(
-        updateSQL,
-        [tradeType, region, availability, bio, traderId],
-        (err, rows) => {
-            if (err) {
-                res.status(500);
+    conn.query(tradeTypeSQL, (err, tradeTypeRows) => {
+        if (err) {
+            res.status(500);
+            res.json({
+                status: "failure",
+                message: err,
+            });
+        } else {
+            if (
+                !validateRequiredNumberField(tradeType) ||
+                !tradeTypeRows.some(
+                    ({ trade_type_id }) => trade_type_id === tradeType,
+                )
+            ) {
+                validationResults["tradeType"] = "Invalid Trade Type";
+            }
+
+            if (Object.keys(validationResults).length > 0) {
+                res.status(400);
                 res.json({
                     status: "failure",
-                    message: err,
+                    validationResults,
                 });
-            } else {
-                if (rows.affectedRows > 0) {
-                    res.status(200);
-                    res.json({
-                        status: "success",
-                        message: `Record ID ${traderId} updated`,
-                    });
-                } else {
-                    res.status(404);
-                    res.json({
-                        status: "failure",
-                        message: `Invalid ID ${traderId}`,
-                    });
-                }
+                return;
             }
-        },
-    );
+
+            const updateSQL =
+                "UPDATE traders SET trade_type_id = ?, region = ?, availability = ?, bio = ? WHERE trader_id = ?";
+
+            conn.query(
+                updateSQL,
+                [tradeType, region, availability, bio, traderId],
+                (err, rows) => {
+                    if (err) {
+                        res.status(500);
+                        res.json({
+                            status: "failure",
+                            message: err,
+                        });
+                    } else {
+                        if (rows.affectedRows > 0) {
+                            res.status(200);
+                            res.json({
+                                status: "success",
+                                message: `Record ID ${traderId} updated`,
+                            });
+                        } else {
+                            res.status(404);
+                            res.json({
+                                status: "failure",
+                                message: `Invalid ID ${traderId}`,
+                            });
+                        }
+                    }
+                },
+            );
+        }
+    });
 };
 
 //#endregion
@@ -163,6 +188,12 @@ exports.getServiceForTrader = (req, res) => {
                 status: "failure",
                 message: err,
             });
+        } else if (rows.length === 0) {
+            res.status(404);
+            res.json({
+                status: "failure",
+                message: "Service does not exist",
+            });
         } else {
             res.status(200);
             res.json({
@@ -178,12 +209,46 @@ exports.putServiceForTrader = (req, res) => {
     const { traderId, serviceId } = req.params;
     const { title, description, pricingType, basePrice } = req.body;
 
+    const validationResults = {};
+
+    if (!validateRequiredStringField(title)) {
+        validationResults["title"] = "Name is a required field";
+    }
+
+    if (!validateRequiredStringField(description)) {
+        validationResults["description"] = "Description is a required field";
+    }
+
+    if (!validatePricingType(pricingType)) {
+        validationResults["pricingType"] = "Pricing type is a required field";
+    }
+
+    if (!validateRequiredNumberField(basePrice)) {
+        validationResults["basePrice"] = "Base price is a required field";
+    }
+
+    if (Object.keys(validationResults).length > 0) {
+        res.status(400);
+        res.json({
+            status: "failure",
+            validationResults,
+        });
+        return;
+    }
+
     const updateSQL = `
     UPDATE services SET title = ?, description = ?, pricing_type = ?, base_price = ? WHERE trader_id = ? AND service_id = ?`;
 
     conn.query(
         updateSQL,
-        [title, description, pricingType, basePrice, traderId, serviceId],
+        [
+            title,
+            description,
+            pricingType,
+            basePrice.toFixed(2),
+            traderId,
+            serviceId,
+        ],
         (err, rows) => {
             if (err) {
                 res.status(500);
@@ -214,12 +279,40 @@ exports.postServiceForTrader = (req, res) => {
     const { traderId } = req.params;
     const { title, description, pricingType, basePrice } = req.body;
 
+    const validationResults = {};
+
+    if (!validateRequiredStringField(title)) {
+        validationResults["title"] = "Name is a required field";
+    }
+
+    if (!validateRequiredStringField(description)) {
+        validationResults["description"] = "Description is a required field";
+    }
+
+    if (!validatePricingType(pricingType)) {
+        validationResults["pricingType"] = "Pricing type is a required field";
+    }
+
+    //TODO: Something is probably wrong with this validation
+    if (!validateRequiredNumberField(basePrice)) {
+        validationResults["basePrice"] = "Base price is a required field";
+    }
+
+    if (Object.keys(validationResults).length > 0) {
+        res.status(400);
+        res.json({
+            status: "failure",
+            validationResults,
+        });
+        return;
+    }
+
     const insertSQL = `INSERT INTO services (title, description, pricing_type, base_price, trader_id)
             VALUES (?, ?, ?, ?, ?)`;
 
     conn.query(
         insertSQL,
-        [title, description, pricingType, basePrice, traderId],
+        [title, description, pricingType, basePrice.toFixed(2), traderId],
         (err, rows) => {
             if (err) {
                 res.status(500);

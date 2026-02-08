@@ -1,6 +1,7 @@
 const conn = require("../utils/dbconn");
 const {
-    validateDateTime,
+    validateBookingDate,
+    validateRequiredStringField,
     validateEmail,
     validateStatus,
 } = require("../utils/validators");
@@ -64,29 +65,29 @@ exports.postBooking = (req, res) => {
         status,
     } = req.body;
 
+    const validationResults = {};
+
+    if (!validateRequiredStringField(clientName)) {
+        validationResults["clientName"] = "Name is a required field";
+    }
+
     if (!validateEmail(clientEmailAddress)) {
-        res.status(400);
-        res.json({
-            status: "failure",
-            message: "Invalid email format",
-        });
-        return;
+        validationResults["clientEmailAddress"] = "Invalid email format";
     }
 
-    if (!validateDateTime(requestedDateTime)) {
-        res.status(400);
-        res.json({
-            status: "failure",
-            message: "Invalid date and time format",
-        });
-        return;
+    if (!validateBookingDate(requestedDateTime)) {
+        validationResults["requestedDateTime"] = "Invalid date and time format";
     }
 
-    if (!validateStatus(status)) {
+    if (!validateRequiredStringField(jobDescription)) {
+        validationResults["jobDescription"] = "Description is a required field";
+    }
+
+    if (Object.keys(validationResults).length > 0) {
         res.status(400);
         res.json({
             status: "failure",
-            message: "Invalid status",
+            validationResults,
         });
         return;
     }
@@ -128,24 +129,45 @@ exports.putBooking = (req, res) => {
         clientName,
         clientEmailAddress,
         serviceId,
-        requestedDate,
-        requestedStartTime,
+        requestedDateTime,
         jobDescription,
         status,
     } = req.body;
 
+    const validationResults = {};
+
+    if (!validateRequiredStringField(clientName)) {
+        validationResults["clientName"] = "Name is a required field";
+    }
+
+    if (!validateEmail(clientEmailAddress)) {
+        validationResults["clientEmailAddress"] = "Invalid email format";
+    }
+
+    if (!validateBookingDate(requestedDateTime)) {
+        validationResults["requestedDateTime"] = "Invalid date and time format";
+    }
+
+    if (!validateRequiredStringField(jobDescription)) {
+        validationResults["jobDescription"] = "Description is a required field";
+    }
+
     if (!validateStatus(status)) {
+        validationResults["status"] = "Status is a required field";
+    }
+
+    if (Object.keys(validationResults).length > 0) {
         res.status(400);
         res.json({
             status: "failure",
-            message: "Invalid status",
+            validationResults,
         });
         return;
     }
 
     const updateSQL = `
         UPDATE bookings 
-        SET client_name = ?, client_email_address = ?, service_id = ?, requested_date = ?, requested_start_time = ?, job_description = ?, status = ? 
+        SET client_name = ?, client_email_address = ?, service_id = ?, requested_date_time = ?, job_description = ?, status = ? 
         WHERE booking_id = ?
     `;
 
@@ -155,8 +177,7 @@ exports.putBooking = (req, res) => {
             clientName,
             clientEmailAddress,
             serviceId,
-            requestedDate,
-            requestedStartTime,
+            requestedDateTime,
             jobDescription,
             status,
             bookingId,
@@ -191,11 +212,17 @@ exports.patchBookingStatus = (req, res) => {
     const { bookingId } = req.params;
     const { status } = req.body;
 
+    const validationResults = {};
+
     if (!validateStatus(status)) {
+        validationResults["status"] = "Status is a required field";
+    }
+
+    if (Object.keys(validationResults).length > 0) {
         res.status(400);
         res.json({
             status: "failure",
-            message: "Invalid status",
+            validationResults,
         });
         return;
     }

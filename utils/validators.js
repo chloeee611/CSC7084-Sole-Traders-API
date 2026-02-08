@@ -6,7 +6,11 @@ exports.validateRequiredStringField = (inputStringField) =>
     String(inputStringField).trim() !== "";
 
 exports.validateRequiredNumberField = (inputNumberField) =>
-    inputNumberField && typeof inputStatusString === "number";
+    inputNumberField && typeof inputNumberField === "number";
+
+exports.validateDateTime = (inputString) =>
+    this.validateRequiredStringField(inputString) &&
+    !isNaN(Date.parse(inputString));
 
 //#endregion
 
@@ -35,12 +39,15 @@ exports.validateStatus = (inputStatusString) =>
     typeof inputStatusString === "string" &&
     validStatuses.includes(inputStatusString);
 
-exports.validateBookingDate = (inputDateString) =>
-    this.validateDate(inputDateString) &&
-    Date.parse(inputDateString) > Date.now();
+const validPricingTypes = ["Hourly", "Fixed"];
 
-exports.validateDateTime = (inputString) =>
+exports.validatePricingType = (inputString) =>
     this.validateRequiredStringField(inputString) &&
-    !isNaN(Date.parse(inputString));
+    typeof inputString === "string" &&
+    validPricingTypes.includes(inputString);
+
+exports.validateBookingDate = (inputDateString) =>
+    this.validateDateTime(inputDateString) &&
+    Date.parse(inputDateString) > Date.now();
 
 //#endregion

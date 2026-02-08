@@ -35,15 +35,6 @@ exports.postRegister = (req, res) => {
         validationResults["confirmPassword"] = "Passwords do not match";
     }
 
-    if (Object.keys(validationResults).length > 0) {
-        res.status(400);
-        res.json({
-            status: "failure",
-            validationResults,
-        });
-        return;
-    }
-
     const selectUsernameSQL = `SELECT * FROM traders WHERE username = ?`;
 
     conn.query(selectUsernameSQL, [username], (err, usernameRows) => {
@@ -55,13 +46,7 @@ exports.postRegister = (req, res) => {
             });
         } else {
             if (usernameRows.length > 0) {
-                res.status(400);
-                res.json({
-                    status: "failure",
-                    message: "Username already in use",
-                });
-
-                return;
+                validationResults["username"] = "Username is already in use";
             }
 
             const selectEmailSQL = `SELECT * FROM traders WHERE email = ?`;
@@ -75,12 +60,15 @@ exports.postRegister = (req, res) => {
                     });
                 } else {
                     if (emailRows.length > 0) {
+                        validationResults["email"] = "Email already in use";
+                    }
+
+                    if (Object.keys(validationResults).length > 0) {
                         res.status(400);
                         res.json({
                             status: "failure",
-                            message: "Email already in use",
+                            validationResults,
                         });
-
                         return;
                     }
 

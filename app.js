@@ -6,7 +6,6 @@ const traderRouter = require("./routes/trader-routes");
 const tradeTypeRouter = require("./routes/trade-type-routes");
 const loginRouter = require("./routes/login-routes");
 const registerRouter = require("./routes/register-routes");
-const serviceRouter = require("./routes/service-routes");
 const bookingRouter = require("./routes/booking-routes");
 
 const PORT = process.env.PORT;
@@ -21,7 +20,6 @@ app.use("/traders", traderRouter);
 app.use("/trade-types", tradeTypeRouter);
 app.use("/trader-login", loginRouter);
 app.use("/trader-register", registerRouter);
-app.use("/services", serviceRouter);
 app.use("/bookings", bookingRouter);
 
 app.listen(PORT, (err) => {
