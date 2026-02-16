@@ -3,8 +3,8 @@ const bcrypt = require("bcrypt");
 
 exports.postLogin = (req, res) => {
     const { username, password } = req.body;
-    const vals = [username];
-    const checkuserSQL = `SELECT * FROM traders WHERE username = ?`;
+    const vals = { username };
+    const checkuserSQL = `SELECT * FROM traders WHERE username = :username`;
 
     conn.query(checkuserSQL, vals, (err, rows) => {
         if (err) throw err;
@@ -23,6 +23,7 @@ exports.postLogin = (req, res) => {
 
         bcrypt.compare(password, trader.password, (err2, match) => {
             if (err2) {
+                console.log(err);
                 res.status(500);
                 res.json({
                     message: err2,

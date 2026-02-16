@@ -8,39 +8,61 @@ const {
 //#region Trader
 
 exports.getAllTraders = (req, res) => {
-    // TODO: pick all fields except password. Dunno if that means picking them all manually or if there's a smart MySQL way to do that
-    const selectSQL = `
-        SELECT * 
+    const { region, trade_type, order_by, order_direction } = req.query;
+
+    let selectSQL = `
+        SELECT trader_id, name, username, email, traders.trade_type_id, region, availability, bio, trade_type_name
         FROM traders 
         LEFT JOIN trade_types
         ON traders.trade_type_id = trade_types.trade_type_id
         `;
-    // TODO: add has_profile to trader
+    // TODO: add has_profile to trader so they don't show up in table
     // WHERE traders.has_profile = true
 
-    conn.query(selectSQL, (err, rows) => {
-        if (err) {
-            res.status(500);
-            res.json({
-                status: "failure",
-                message: err,
-            });
-        } else {
-            res.status(200);
-            res.json({
-                status: "success",
-                message: `${rows.length} records retrieved`,
-                result: rows,
-            });
-        }
-    });
+    if (region && trade_type !== undefined && trade_type !== "") {
+        selectSQL += `\nWHERE region LIKE :region AND traders.trade_type_id = :trade_type`;
+    } else if (trade_type !== undefined && trade_type !== "") {
+        selectSQL += "\nWHERE traders.trade_type_id = :trade_type";
+    } else if (region) {
+        selectSQL += `\nWHERE region LIKE :region`;
+    }
+
+    if (order_by) {
+        // Would be nice to validate order_by is a valid column
+        selectSQL += `\nORDER BY ${order_by} ${!order_direction || order_direction.toLowerCase() === "asc" ? "ASC" : "DESC"}`;
+    }
+
+    conn.query(
+        selectSQL,
+        {
+            region: `${region}%`,
+            trade_type,
+        },
+        (err, rows) => {
+            if (err) {
+                console.log(err);
+                res.status(500);
+                res.json({
+                    status: "failure",
+                    message: err,
+                });
+            } else {
+                res.status(200);
+                res.json({
+                    status: "success",
+                    message: `${rows.length} records retrieved`,
+                    result: rows,
+                });
+            }
+        },
+    );
 };
 
 exports.getTrader = (req, res) => {
     const { traderId } = req.params;
 
     const selectSQL = `        
-        SELECT * 
+        SELECT trader_id, name, username, email, traders.trade_type_id, region, availability, bio, trade_type_name
         FROM traders 
         LEFT JOIN trade_types
         ON traders.trade_type_id = trade_types.trade_type_id
@@ -49,6 +71,7 @@ exports.getTrader = (req, res) => {
 
     conn.query(selectSQL, (err, rows) => {
         if (err) {
+            console.log(err);
             res.status(500);
             res.json({
                 status: "failure",
@@ -93,19 +116,22 @@ exports.putTraderDetails = (req, res) => {
 
     conn.query(tradeTypeSQL, (err, tradeTypeRows) => {
         if (err) {
+            console.log(err);
             res.status(500);
             res.json({
                 status: "failure",
                 message: err,
             });
         } else {
+            const tradeTypeId = Number(tradeType);
+
             if (
-                !validateRequiredNumberField(tradeType) ||
+                !validateRequiredNumberField(tradeTypeId) ||
                 !tradeTypeRows.some(
-                    ({ trade_type_id }) => trade_type_id === tradeType,
+                    ({ trade_type_id }) => trade_type_id === tradeTypeId,
                 )
             ) {
-                validationResults["tradeType"] = "Invalid Trade Type";
+                validationResults.tradeType = "Invalid Trade Type";
             }
 
             if (Object.keys(validationResults).length > 0) {
@@ -125,6 +151,7 @@ exports.putTraderDetails = (req, res) => {
                 [tradeType, region, availability, bio, traderId],
                 (err, rows) => {
                     if (err) {
+                        console.log(err);
                         res.status(500);
                         res.json({
                             status: "failure",
@@ -161,6 +188,7 @@ exports.getAllServicesForTrader = (req, res) => {
 
     conn.query(selectSQL, [traderId], (err, rows) => {
         if (err) {
+            console.log(err);
             res.status(500);
             res.json({
                 status: "failure",
@@ -183,6 +211,7 @@ exports.getServiceForTrader = (req, res) => {
 
     conn.query(selectSQL, [traderId, serviceId], (err, rows) => {
         if (err) {
+            console.log(err);
             res.status(500);
             res.json({
                 status: "failure",
@@ -199,7 +228,7 @@ exports.getServiceForTrader = (req, res) => {
             res.json({
                 status: "success",
                 message: `${rows.length} records retrieved`,
-                result: rows,
+                result: rows[0],
             });
         }
     });
@@ -251,6 +280,7 @@ exports.putServiceForTrader = (req, res) => {
         ],
         (err, rows) => {
             if (err) {
+                console.log(err);
                 res.status(500);
                 res.json({
                     status: "failure",
@@ -279,6 +309,8 @@ exports.postServiceForTrader = (req, res) => {
     const { traderId } = req.params;
     const { title, description, pricingType, basePrice } = req.body;
 
+    console.log(req.body);
+
     const validationResults = {};
 
     if (!validateRequiredStringField(title)) {
@@ -293,7 +325,6 @@ exports.postServiceForTrader = (req, res) => {
         validationResults["pricingType"] = "Pricing type is a required field";
     }
 
-    //TODO: Something is probably wrong with this validation
     if (!validateRequiredNumberField(basePrice)) {
         validationResults["basePrice"] = "Base price is a required field";
     }
@@ -315,6 +346,7 @@ exports.postServiceForTrader = (req, res) => {
         [title, description, pricingType, basePrice.toFixed(2), traderId],
         (err, rows) => {
             if (err) {
+                console.log(err);
                 res.status(500);
                 res.json({
                     status: "failure",
@@ -327,8 +359,10 @@ exports.postServiceForTrader = (req, res) => {
                     message: `Record ID ${rows.insertId} added`,
                 });
             }
+            console.log(rows);
         },
     );
+    console.log(typeof basePrice);
 };
 
 exports.deleteServiceForTrader = (req, res) => {
@@ -338,6 +372,7 @@ exports.deleteServiceForTrader = (req, res) => {
 
     conn.query(deleteSQL, [traderId, serviceId], (err, rows) => {
         if (err) {
+            console.log(err);
             res.status(500);
             res.json({
                 status: "failure",

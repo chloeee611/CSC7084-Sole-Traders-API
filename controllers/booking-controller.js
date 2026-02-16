@@ -7,10 +7,22 @@ const {
 } = require("../utils/validators");
 
 exports.getAllBookings = (req, res) => {
-    const selectSQL = `SELECT * FROM bookings`;
+    const { status, order_by, order_direction } = req.query;
 
-    conn.query(selectSQL, (err, rows) => {
+    let selectSQL = `SELECT * FROM bookings`;
+
+    if (status) {
+        selectSQL += `\nWHERE status LIKE :status`;
+    }
+
+    if (order_by) {
+        // Would be nice to validate order_by is a valid column
+        selectSQL += `\nORDER BY ${order_by} ${!order_direction || order_direction.toLowerCase() === "asc" ? "ASC" : "DESC"}`;
+    }
+
+    conn.query(selectSQL, { status }, (err, rows) => {
         if (err) {
+            console.log(err);
             res.status(500);
             res.json({
                 status: "failure",
@@ -38,6 +50,7 @@ exports.getBooking = (req, res) => {
 
     conn.query(selectSQL, (err, rows) => {
         if (err) {
+            console.log(err);
             res.status(500);
             res.json({
                 status: "failure",
@@ -107,6 +120,7 @@ exports.postBooking = (req, res) => {
         ],
         (err) => {
             if (err) {
+                console.log(err);
                 res.status(500);
                 res.json({
                     status: "failure",
@@ -184,6 +198,7 @@ exports.putBooking = (req, res) => {
         ],
         (err, rows) => {
             if (err) {
+                console.log(err);
                 res.status(500);
                 res.json({
                     status: "failure",
@@ -231,6 +246,7 @@ exports.patchBookingStatus = (req, res) => {
 
     conn.query(updateSQL, [status, bookingId], (err, rows) => {
         if (err) {
+            console.log(err);
             res.status(500);
             res.json({
                 status: "failure",
@@ -261,6 +277,7 @@ exports.deleteBooking = (req, res) => {
 
     conn.query(deleteSQL, [bookingId], (err, rows) => {
         if (err) {
+            console.log(err);
             res.status(500);
             res.json({
                 status: "failure",

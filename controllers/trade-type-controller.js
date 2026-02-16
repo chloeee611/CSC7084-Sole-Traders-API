@@ -9,6 +9,7 @@ exports.getTradeTypes = (req, res) => {
         }
 
         if (err) {
+            console.log(err);
             res.status(500);
             res.json({
                 status: "failure",

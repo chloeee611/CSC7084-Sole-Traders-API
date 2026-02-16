@@ -39,6 +39,7 @@ exports.postRegister = (req, res) => {
 
     conn.query(selectUsernameSQL, [username], (err, usernameRows) => {
         if (err) {
+            console.log(err);
             res.status(500);
             res.json({
                 status: "failure",
@@ -53,6 +54,7 @@ exports.postRegister = (req, res) => {
 
             conn.query(selectEmailSQL, [email], (err, emailRows) => {
                 if (err) {
+                    console.log(err);
                     res.status(500);
                     res.json({
                         status: "failure",
