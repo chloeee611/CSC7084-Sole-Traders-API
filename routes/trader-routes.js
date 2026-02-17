@@ -15,4 +15,10 @@ router.delete(
     controller.deleteServiceForTrader,
 );
 
+router.get("/:traderId/ratings", controller.getAllRatingsForTrader);
+router.get("/:traderId/ratings/:ratingId", controller.getRatingForTrader);
+router.post("/:traderId/ratings", controller.postRatingForTrader);
+router.put("/:traderId/ratings/:ratingId", controller.putRatingForTrader);
+router.delete("/:traderId/ratings/:ratingId", controller.deleteRatingForTrader);
+
 module.exports = router;

@@ -50,4 +50,9 @@ exports.validateBookingDate = (inputDateString) =>
     this.validateDateTime(inputDateString) &&
     Date.parse(inputDateString) > Date.now();
 
+exports.validateTraderRating = (inputNumber) =>
+    this.validateRequiredNumberField(inputNumber) &&
+    Number(inputNumber) > 0 &&
+    Number(inputNumber) <= 5;
+
 //#endregion

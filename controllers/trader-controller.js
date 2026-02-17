@@ -3,6 +3,7 @@ const {
     validateRequiredStringField,
     validateRequiredNumberField,
     validatePricingType,
+    validateTraderRating,
 } = require("../utils/validators");
 
 //#region Trader
@@ -11,10 +12,13 @@ exports.getAllTraders = (req, res) => {
     const { region, trade_type, order_by, order_direction } = req.query;
 
     let selectSQL = `
-        SELECT trader_id, name, username, email, traders.trade_type_id, region, availability, bio, trade_type_name
+        SELECT traders.trader_id, name, username, email, traders.trade_type_id, region, availability, bio, trade_type_name, AVG(rating) as average_rating
         FROM traders 
+        LEFT JOIN ratings
+        ON traders.trader_id = ratings.trader_id
         LEFT JOIN trade_types
         ON traders.trade_type_id = trade_types.trade_type_id
+        GROUP BY traders.trader_id
         `;
     // TODO: add has_profile to trader so they don't show up in table
     // WHERE traders.has_profile = true
@@ -390,6 +394,181 @@ exports.deleteServiceForTrader = (req, res) => {
                 res.json({
                     status: "failure",
                     message: `Invalid ID ${serviceId}`,
+                });
+            }
+        }
+    });
+};
+
+//#endregion
+
+//#region Ratings
+
+exports.getAllRatingsForTrader = (req, res) => {
+    const { traderId } = req.params;
+    const selectSQL = `SELECT rating_id, trader_id, rating as average_rating FROM ratings WHERE trader_id = ?`;
+
+    conn.query(selectSQL, [traderId], (err, rows) => {
+        if (err) {
+            console.log(err);
+            res.status(500);
+            res.json({
+                status: "failure",
+                message: err,
+            });
+        } else {
+            res.status(200);
+            res.json({
+                status: "success",
+                message: `${rows.length} records retrieved`,
+                result: rows,
+            });
+        }
+    });
+};
+
+exports.getRatingForTrader = (req, res) => {
+    const { traderId, ratingId } = req.params;
+    const selectSQL = `SELECT rating_id, trader_id, rating FROM ratings WHERE trader_id = ? AND rating_id = ?`;
+
+    conn.query(selectSQL, [traderId, ratingId], (err, rows) => {
+        if (err) {
+            console.log(err);
+            res.status(500);
+            res.json({
+                status: "failure",
+                message: err,
+            });
+        } else if (rows.length === 0) {
+            res.status(404);
+            res.json({
+                status: "failure",
+                message: "Rating does not exist",
+            });
+        } else {
+            res.status(200);
+            res.json({
+                status: "success",
+                message: `${rows.length} records retrieved`,
+                result: rows[0],
+            });
+        }
+    });
+};
+
+exports.putRatingForTrader = (req, res) => {
+    const { traderId, ratingId } = req.params;
+    const { rating } = req.body;
+
+    const validationResults = {};
+
+    if (!validateTraderRating(rating)) {
+        validationResults["rating"] = "Rating must be a number between 1 and 5";
+    }
+
+    if (Object.keys(validationResults).length > 0) {
+        res.status(400);
+        res.json({
+            status: "failure",
+            validationResults,
+        });
+        return;
+    }
+
+    const updateSQL = `UPDATE ratings SET rating = ? WHERE trader_id = ? AND rating_id = ?`;
+
+    conn.query(updateSQL, [rating, traderId, ratingId], (err, rows) => {
+        if (err) {
+            console.log(err);
+            res.status(500);
+            res.json({
+                status: "failure",
+                message: err,
+            });
+        } else {
+            if (rows.affectedRows > 0) {
+                res.status(200);
+                res.json({
+                    status: "success",
+                    message: `Record ID ${ratingId} updated`,
+                });
+            } else {
+                res.status(404);
+                res.json({
+                    status: "failure",
+                    message: `Invalid ID ${ratingId}`,
+                });
+            }
+        }
+    });
+};
+
+exports.postRatingForTrader = (req, res) => {
+    const { traderId } = req.params;
+    const { rating } = req.body;
+
+    const validationResults = {};
+
+    if (!validateTraderRating(rating)) {
+        validationResults["rating"] = "Rating must be a number between 1 and 5";
+    }
+
+    if (Object.keys(validationResults).length > 0) {
+        res.status(400);
+        res.json({
+            status: "failure",
+            validationResults,
+        });
+        return;
+    }
+
+    const insertSQL = `INSERT INTO ratings (rating, trader_id)
+            VALUES (?, ?)`;
+
+    conn.query(insertSQL, [rating, traderId], (err, rows) => {
+        if (err) {
+            console.log(err);
+            res.status(500);
+            res.json({
+                status: "failure",
+                message: err,
+            });
+        } else {
+            res.status(201);
+            res.json({
+                status: "success",
+                message: `Record ID ${rows.insertId} added`,
+            });
+        }
+        console.log(rows);
+    });
+};
+
+exports.deleteRatingForTrader = (req, res) => {
+    const { traderId, ratingId } = req.params;
+
+    const deleteSQL = `DELETE FROM ratings WHERE trader_id = ? AND rating_id = ?`;
+
+    conn.query(deleteSQL, [traderId, ratingId], (err, rows) => {
+        if (err) {
+            console.log(err);
+            res.status(500);
+            res.json({
+                status: "failure",
+                message: err,
+            });
+        } else {
+            if (rows.affectedRows > 0) {
+                res.status(200);
+                res.json({
+                    status: "success",
+                    message: `Record ID ${ratingId} deleted`,
+                });
+            } else {
+                res.status(404);
+                res.json({
+                    status: "failure",
+                    message: `Invalid ID ${ratingId}`,
                 });
             }
         }
