@@ -45,10 +45,10 @@ exports.getBooking = (req, res) => {
     const selectSQL = `        
         SELECT * 
         FROM bookings 
-        WHERE booking_id = ${bookingId}
+        WHERE booking_id = :bookingId
         `;
 
-    conn.query(selectSQL, (err, rows) => {
+    conn.query(selectSQL, { bookingId }, (err, rows) => {
         if (err) {
             console.log(err);
             res.status(500);
@@ -68,7 +68,6 @@ exports.getBooking = (req, res) => {
 };
 
 exports.postBooking = (req, res) => {
-    console.log(req.body);
     const {
         clientName,
         clientEmailAddress,
@@ -106,18 +105,18 @@ exports.postBooking = (req, res) => {
     }
 
     const insertSQL = `INSERT INTO bookings (client_name, client_email_address, service_id, requested_date_time, job_description, status)
-            VALUES (?, ?, ?, ?, ?, ?)`;
+            VALUES (:clientName, :clientEmailAddress, :serviceId, :requestedDateTime, :jobDescription, :status)`;
 
     conn.query(
         insertSQL,
-        [
+        {
             clientName,
             clientEmailAddress,
             serviceId,
             requestedDateTime,
             jobDescription,
             status,
-        ],
+        },
         (err) => {
             if (err) {
                 console.log(err);
@@ -181,13 +180,13 @@ exports.putBooking = (req, res) => {
 
     const updateSQL = `
         UPDATE bookings 
-        SET client_name = ?, client_email_address = ?, service_id = ?, requested_date_time = ?, job_description = ?, status = ? 
-        WHERE booking_id = ?
+        SET client_name = :clientName, client_email_address = :clientEmailAddress, service_id = :serviceId, requested_date_time = :requestedDateTime, job_description = :jobDescription, status = :status 
+        WHERE booking_id = :bookingId
     `;
 
     conn.query(
         updateSQL,
-        [
+        {
             clientName,
             clientEmailAddress,
             serviceId,
@@ -195,7 +194,7 @@ exports.putBooking = (req, res) => {
             jobDescription,
             status,
             bookingId,
-        ],
+        },
         (err, rows) => {
             if (err) {
                 console.log(err);
@@ -242,9 +241,9 @@ exports.patchBookingStatus = (req, res) => {
         return;
     }
 
-    const updateSQL = `UPDATE bookings SET status = ? WHERE booking_id = ?`;
+    const updateSQL = `UPDATE bookings SET status = :status WHERE booking_id = :bookingId`;
 
-    conn.query(updateSQL, [status, bookingId], (err, rows) => {
+    conn.query(updateSQL, { status, bookingId }, (err, rows) => {
         if (err) {
             console.log(err);
             res.status(500);
@@ -273,9 +272,9 @@ exports.patchBookingStatus = (req, res) => {
 exports.deleteBooking = (req, res) => {
     const { bookingId } = req.params;
 
-    const deleteSQL = `DELETE FROM bookings WHERE booking_id = ?`;
+    const deleteSQL = `DELETE FROM bookings WHERE booking_id = :bookingId`;
 
-    conn.query(deleteSQL, [bookingId], (err, rows) => {
+    conn.query(deleteSQL, { bookingId }, (err, rows) => {
         if (err) {
             console.log(err);
             res.status(500);

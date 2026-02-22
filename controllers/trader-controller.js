@@ -70,10 +70,10 @@ exports.getTrader = (req, res) => {
         FROM traders 
         LEFT JOIN trade_types
         ON traders.trade_type_id = trade_types.trade_type_id
-        WHERE trader_id = ${traderId}
+        WHERE trader_id = :traderId
         `;
 
-    conn.query(selectSQL, (err, rows) => {
+    conn.query(selectSQL, { traderId }, (err, rows) => {
         if (err) {
             console.log(err);
             res.status(500);
@@ -148,11 +148,11 @@ exports.putTraderDetails = (req, res) => {
             }
 
             const updateSQL =
-                "UPDATE traders SET trade_type_id = ?, region = ?, availability = ?, bio = ? WHERE trader_id = ?";
+                "UPDATE traders SET trade_type_id = :tradeType, region = :region, availability = :availability, bio = :bio WHERE trader_id = :traderId";
 
             conn.query(
                 updateSQL,
-                [tradeType, region, availability, bio, traderId],
+                { tradeType, region, availability, bio, traderId },
                 (err, rows) => {
                     if (err) {
                         console.log(err);
@@ -188,9 +188,9 @@ exports.putTraderDetails = (req, res) => {
 
 exports.getAllServicesForTrader = (req, res) => {
     const { traderId } = req.params;
-    const selectSQL = `SELECT service_id, title, description, pricing_type, base_price FROM services WHERE trader_id = ?`;
+    const selectSQL = `SELECT service_id, title, description, pricing_type, base_price FROM services WHERE trader_id = :traderId`;
 
-    conn.query(selectSQL, [traderId], (err, rows) => {
+    conn.query(selectSQL, { traderId }, (err, rows) => {
         if (err) {
             console.log(err);
             res.status(500);
@@ -211,9 +211,9 @@ exports.getAllServicesForTrader = (req, res) => {
 
 exports.getServiceForTrader = (req, res) => {
     const { traderId, serviceId } = req.params;
-    const selectSQL = `SELECT service_id, title, description, pricing_type, base_price FROM services WHERE trader_id = ? AND service_id = ?`;
+    const selectSQL = `SELECT service_id, title, description, pricing_type, base_price FROM services WHERE trader_id = :traderId AND service_id = :serviceId`;
 
-    conn.query(selectSQL, [traderId, serviceId], (err, rows) => {
+    conn.query(selectSQL, { traderId, serviceId }, (err, rows) => {
         if (err) {
             console.log(err);
             res.status(500);
@@ -270,18 +270,19 @@ exports.putServiceForTrader = (req, res) => {
     }
 
     const updateSQL = `
-    UPDATE services SET title = ?, description = ?, pricing_type = ?, base_price = ? WHERE trader_id = ? AND service_id = ?`;
+    UPDATE services SET title = :title, description = :description, pricing_type = :pricingType, base_price = :basePrice WHERE trader_id = :traderId AND service_id = :serviceId`;
 
     conn.query(
         updateSQL,
-        [
+
+        {
             title,
             description,
             pricingType,
-            basePrice.toFixed(2),
+            basePrice: basePrice.toFixed(2),
             traderId,
             serviceId,
-        ],
+        },
         (err, rows) => {
             if (err) {
                 console.log(err);
@@ -343,11 +344,17 @@ exports.postServiceForTrader = (req, res) => {
     }
 
     const insertSQL = `INSERT INTO services (title, description, pricing_type, base_price, trader_id)
-            VALUES (?, ?, ?, ?, ?)`;
+            VALUES (:title, :description, :pricingType, :basePrice, :traderId)`;
 
     conn.query(
         insertSQL,
-        [title, description, pricingType, basePrice.toFixed(2), traderId],
+        {
+            title,
+            description,
+            pricingType,
+            basePrice: basePrice.toFixed(2),
+            traderId,
+        },
         (err, rows) => {
             if (err) {
                 console.log(err);
@@ -372,9 +379,9 @@ exports.postServiceForTrader = (req, res) => {
 exports.deleteServiceForTrader = (req, res) => {
     const { traderId, serviceId } = req.params;
 
-    const deleteSQL = `DELETE FROM services WHERE trader_id = ? AND service_id = ?`;
+    const deleteSQL = `DELETE FROM services WHERE trader_id = :traderId AND service_id = :serviceId`;
 
-    conn.query(deleteSQL, [traderId, serviceId], (err, rows) => {
+    conn.query(deleteSQL, { traderId, serviceId }, (err, rows) => {
         if (err) {
             console.log(err);
             res.status(500);
@@ -406,9 +413,9 @@ exports.deleteServiceForTrader = (req, res) => {
 
 exports.getAllRatingsForTrader = (req, res) => {
     const { traderId } = req.params;
-    const selectSQL = `SELECT rating_id, trader_id, rating as average_rating FROM ratings WHERE trader_id = ?`;
+    const selectSQL = `SELECT rating_id, trader_id, rating as average_rating FROM ratings WHERE trader_id = :traderId`;
 
-    conn.query(selectSQL, [traderId], (err, rows) => {
+    conn.query(selectSQL, { traderId }, (err, rows) => {
         if (err) {
             console.log(err);
             res.status(500);
@@ -429,9 +436,9 @@ exports.getAllRatingsForTrader = (req, res) => {
 
 exports.getRatingForTrader = (req, res) => {
     const { traderId, ratingId } = req.params;
-    const selectSQL = `SELECT rating_id, trader_id, rating FROM ratings WHERE trader_id = ? AND rating_id = ?`;
+    const selectSQL = `SELECT rating_id, trader_id, rating FROM ratings WHERE trader_id = :traderId AND rating_id = :ratingId`;
 
-    conn.query(selectSQL, [traderId, ratingId], (err, rows) => {
+    conn.query(selectSQL, { traderId, ratingId }, (err, rows) => {
         if (err) {
             console.log(err);
             res.status(500);
@@ -475,9 +482,9 @@ exports.putRatingForTrader = (req, res) => {
         return;
     }
 
-    const updateSQL = `UPDATE ratings SET rating = ? WHERE trader_id = ? AND rating_id = ?`;
+    const updateSQL = `UPDATE ratings SET rating = :rating WHERE trader_id = :traderId AND rating_id = :ratingId`;
 
-    conn.query(updateSQL, [rating, traderId, ratingId], (err, rows) => {
+    conn.query(updateSQL, { rating, traderId, ratingId }, (err, rows) => {
         if (err) {
             console.log(err);
             res.status(500);
@@ -523,9 +530,9 @@ exports.postRatingForTrader = (req, res) => {
     }
 
     const insertSQL = `INSERT INTO ratings (rating, trader_id)
-            VALUES (?, ?)`;
+            VALUES (:rating, :traderId)`;
 
-    conn.query(insertSQL, [rating, traderId], (err, rows) => {
+    conn.query(insertSQL, { rating, traderId }, (err, rows) => {
         if (err) {
             console.log(err);
             res.status(500);
@@ -537,6 +544,7 @@ exports.postRatingForTrader = (req, res) => {
             res.status(201);
             res.json({
                 status: "success",
+                id: rows.insertId,
                 message: `Record ID ${rows.insertId} added`,
             });
         }
@@ -547,9 +555,9 @@ exports.postRatingForTrader = (req, res) => {
 exports.deleteRatingForTrader = (req, res) => {
     const { traderId, ratingId } = req.params;
 
-    const deleteSQL = `DELETE FROM ratings WHERE trader_id = ? AND rating_id = ?`;
+    const deleteSQL = `DELETE FROM ratings WHERE trader_id = :traderId AND rating_id = :ratingId`;
 
-    conn.query(deleteSQL, [traderId, ratingId], (err, rows) => {
+    conn.query(deleteSQL, { traderId, ratingId }, (err, rows) => {
         if (err) {
             console.log(err);
             res.status(500);

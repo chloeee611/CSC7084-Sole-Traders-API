@@ -35,9 +35,9 @@ exports.postRegister = (req, res) => {
         validationResults["confirmPassword"] = "Passwords do not match";
     }
 
-    const selectUsernameSQL = `SELECT * FROM traders WHERE username = ?`;
+    const selectUsernameSQL = `SELECT * FROM traders WHERE username = :username`;
 
-    conn.query(selectUsernameSQL, [username], (err, usernameRows) => {
+    conn.query(selectUsernameSQL, { username }, (err, usernameRows) => {
         if (err) {
             console.log(err);
             res.status(500);
@@ -50,9 +50,9 @@ exports.postRegister = (req, res) => {
                 validationResults["username"] = "Username is already in use";
             }
 
-            const selectEmailSQL = `SELECT * FROM traders WHERE email = ?`;
+            const selectEmailSQL = `SELECT * FROM traders WHERE email = :email`;
 
-            conn.query(selectEmailSQL, [email], (err, emailRows) => {
+            conn.query(selectEmailSQL, { email }, (err, emailRows) => {
                 if (err) {
                     console.log(err);
                     res.status(500);
@@ -79,16 +79,16 @@ exports.postRegister = (req, res) => {
                         SALT_WORK_FACTOR,
                         (err, hashedPassword) => {
                             const insertSQL = `INSERT INTO traders (name, username, email, password, trade_type_id, region, availability, bio)
-            VALUES (?, ?, ?, ?, NULL, NULL, NULL, NULL)`;
+                                                VALUES (:name, :username, :email, :hashedPassword, NULL, NULL, NULL, NULL)`;
 
                             conn.query(
                                 insertSQL,
-                                [
+                                {
                                     name,
                                     username,
-                                    email.toLowerCase(),
+                                    email: email.toLowerCase(),
                                     hashedPassword,
-                                ],
+                                },
                                 (err) => {
                                     if (err) {
                                         throw err;
