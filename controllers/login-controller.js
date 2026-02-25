@@ -6,15 +6,19 @@ exports.postLogin = (req, res) => {
     const vals = { username };
     const checkuserSQL = `SELECT * FROM traders WHERE username = :username`;
 
+    const validationResults = {};
+
     conn.query(checkuserSQL, vals, (err, rows) => {
         if (err) throw err;
 
         const numrows = rows.length;
 
         if (numrows === 0) {
-            res.status(401);
+            validationResults["username"] = "Username is not in use";
+            res.status(400);
             res.json({
-                message: "Invalid login credentials",
+                status: "failure",
+                validationResults,
             });
             return;
         }
@@ -33,9 +37,11 @@ exports.postLogin = (req, res) => {
 
             // Password incorrect
             if (!match) {
-                res.status(401);
+                validationResults["password"] = "Password is incorrect";
+                res.status(400);
                 res.json({
-                    message: "Invalid login credentials",
+                    status: "failure",
+                    validationResults,
                 });
                 return;
             }

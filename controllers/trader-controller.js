@@ -2,9 +2,9 @@ const conn = require("../utils/dbconn");
 const {
     validateRequiredStringField,
     validateRequiredNumberField,
-    validatePricingType,
     validateTraderRating,
 } = require("../utils/validators");
+const { validationResult } = require("express-validator");
 
 //#region Trader
 
@@ -242,33 +242,18 @@ exports.putServiceForTrader = (req, res) => {
     const { traderId, serviceId } = req.params;
     const { title, description, pricingType, basePrice } = req.body;
 
-    const validationResults = {};
+    const { errors } = validationResult(req);
 
-    if (!validateRequiredStringField(title)) {
-        validationResults["title"] = "Name is a required field";
-    }
-
-    if (!validateRequiredStringField(description)) {
-        validationResults["description"] = "Description is a required field";
-    }
-
-    if (!validatePricingType(pricingType)) {
-        validationResults["pricingType"] = "Pricing type is a required field";
-    }
-
-    if (!validateRequiredNumberField(basePrice)) {
-        validationResults["basePrice"] = "Base price is a required field";
-    }
-
-    if (Object.keys(validationResults).length > 0) {
+    if (errors.length > 0) {
         res.status(400);
         res.json({
             status: "failure",
-            validationResults,
+            validationResults: Object.fromEntries(
+                errors.map(({ path, msg }) => [path, msg]),
+            ),
         });
         return;
     }
-
     const updateSQL = `
     UPDATE services SET title = :title, description = :description, pricing_type = :pricingType, base_price = :basePrice WHERE trader_id = :traderId AND service_id = :serviceId`;
 
@@ -314,31 +299,13 @@ exports.postServiceForTrader = (req, res) => {
     const { traderId } = req.params;
     const { title, description, pricingType, basePrice } = req.body;
 
-    console.log(req.body);
+    const { errors } = validationResult(req);
 
-    const validationResults = {};
-
-    if (!validateRequiredStringField(title)) {
-        validationResults["title"] = "Name is a required field";
-    }
-
-    if (!validateRequiredStringField(description)) {
-        validationResults["description"] = "Description is a required field";
-    }
-
-    if (!validatePricingType(pricingType)) {
-        validationResults["pricingType"] = "Pricing type is a required field";
-    }
-
-    if (!validateRequiredNumberField(basePrice)) {
-        validationResults["basePrice"] = "Base price is a required field";
-    }
-
-    if (Object.keys(validationResults).length > 0) {
+    if (errors.length > 0) {
         res.status(400);
         res.json({
             status: "failure",
-            validationResults,
+            validationResults: errors,
         });
         return;
     }

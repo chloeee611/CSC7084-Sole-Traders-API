@@ -1,5 +1,7 @@
 const express = require("express");
 const controller = require("../controllers/trader-controller");
+const { serviceValidators } = require("../middleware/validators");
+
 const router = express.Router({ mergeParams: true });
 
 router.get("/", controller.getAllTraders);
@@ -8,8 +10,16 @@ router.put("/:traderId", controller.putTraderDetails);
 
 router.get("/:traderId/services", controller.getAllServicesForTrader);
 router.get("/:traderId/services/:serviceId", controller.getServiceForTrader);
-router.post("/:traderId/services", controller.postServiceForTrader);
-router.put("/:traderId/services/:serviceId", controller.putServiceForTrader);
+router.post(
+    "/:traderId/services",
+    serviceValidators,
+    controller.postServiceForTrader,
+);
+router.put(
+    "/:traderId/services/:serviceId",
+    serviceValidators,
+    controller.putServiceForTrader,
+);
 router.delete(
     "/:traderId/services/:serviceId",
     controller.deleteServiceForTrader,

@@ -7,8 +7,16 @@ const {
     validateEmail,
 } = require("../utils/validators");
 const SALT_WORK_FACTOR = 10;
+const { validationResult } = require("express-validator");
 
 exports.postRegister = (req, res) => {
+    const errors = validationResult(req);
+    console.log(errors);
+    if (!errors.isEmpty()) {
+        req.session.registrationErrors = errors.array();
+        return res.redirect("/register");
+    }
+
     const { name, username, email, password, confirmPassword } = req.body;
 
     const validationResults = {};
