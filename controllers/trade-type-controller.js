@@ -1,7 +1,8 @@
 const conn = require("../utils/dbconn");
 
 exports.getTradeTypes = (req, res) => {
-    const selectTraderTypeSQL = "SELECT * FROM trade_types";
+    const selectTraderTypeSQL =
+        "SELECT * FROM trade_types ORDER BY trade_type_name";
 
     conn.query(selectTraderTypeSQL, (err, rows) => {
         if (err) {

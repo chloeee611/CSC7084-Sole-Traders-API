@@ -4,23 +4,28 @@ const {
     validateRequiredStringField,
     validateEmail,
     validateStatus,
+    validateRequiredNumberField,
 } = require("../utils/validators");
 
 exports.getAllBookings = (req, res) => {
-    const { status, order_by, order_direction } = req.query;
+    const { status, order_by, order_direction, trader_id } = req.query;
 
-    let selectSQL = `SELECT * FROM bookings`;
+    let selectSQL = `
+                    SELECT * 
+                    FROM bookings
+                    INNER JOIN services
+                    ON services.service_id = bookings.service_id
+                    WHERE services.trader_id = :trader_id`;
 
     if (status) {
-        selectSQL += `\nWHERE status LIKE :status`;
+        selectSQL += `\nHAVING status LIKE :status`;
     }
 
     if (order_by) {
-        // Would be nice to validate order_by is a valid column
         selectSQL += `\nORDER BY ${order_by} ${!order_direction || order_direction.toLowerCase() === "asc" ? "ASC" : "DESC"}`;
     }
 
-    conn.query(selectSQL, { status }, (err, rows) => {
+    conn.query(selectSQL, { status, trader_id }, (err, rows) => {
         if (err) {
             console.log(err);
             res.status(500);
@@ -93,6 +98,10 @@ exports.postBooking = (req, res) => {
 
     if (!validateRequiredStringField(jobDescription)) {
         validationResults["jobDescription"] = "Description is a required field";
+    }
+
+    if (!validateRequiredNumberField(serviceId)) {
+        validationResults["serviceId"] = "You must select a service";
     }
 
     if (Object.keys(validationResults).length > 0) {
@@ -299,3 +308,69 @@ exports.deleteBooking = (req, res) => {
         }
     });
 };
+
+//#region Chart Data
+exports.getBookingsByDate = (req, res) => {
+    const { trader_id } = req.query;
+
+    let selectSQL = `
+        SELECT COUNT(*) as count, DATE_FORMAT(requested_date_time, '%d-%m-%y') as date
+        FROM bookings 
+        INNER JOIN services
+        ON services.service_id = bookings.service_id
+        WHERE services.trader_id = :trader_id
+        GROUP BY DATE(requested_date_time)
+        ORDER BY requested_date_time ASC
+    `;
+
+    conn.query(selectSQL, { trader_id }, (err, rows) => {
+        if (err) {
+            console.log(err);
+            res.status(500);
+            res.json({
+                status: "failure",
+                message: err,
+            });
+        } else {
+            res.status(200);
+            res.json({
+                status: "success",
+                message: `${rows.length} records retrieved`,
+                result: rows,
+            });
+        }
+    });
+};
+
+exports.getBookingsByService = (req, res) => {
+    const { trader_id } = req.query;
+
+    let selectSQL = `
+        SELECT COUNT(*) as count, title
+        FROM bookings
+        INNER JOIN services
+        ON services.service_id = bookings.service_id
+        WHERE services.trader_id = :trader_id
+        GROUP BY services.service_id
+        ORDER BY title ASC
+    `;
+
+    conn.query(selectSQL, { trader_id }, (err, rows) => {
+        if (err) {
+            console.log(err);
+            res.status(500);
+            res.json({
+                status: "failure",
+                message: err,
+            });
+        } else {
+            res.status(200);
+            res.json({
+                status: "success",
+                message: `${rows.length} records retrieved`,
+                result: rows,
+            });
+        }
+    });
+};
+//#endregion

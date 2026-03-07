@@ -20,19 +20,16 @@ exports.getAllTraders = (req, res) => {
         ON traders.trade_type_id = trade_types.trade_type_id
         GROUP BY traders.trader_id
         `;
-    // TODO: add has_profile to trader so they don't show up in table
-    // WHERE traders.has_profile = true
 
     if (region && trade_type !== undefined && trade_type !== "") {
-        selectSQL += `\nWHERE region LIKE :region AND traders.trade_type_id = :trade_type`;
+        selectSQL += `\nHAVING region LIKE :region AND traders.trade_type_id = :trade_type`;
     } else if (trade_type !== undefined && trade_type !== "") {
-        selectSQL += "\nWHERE traders.trade_type_id = :trade_type";
+        selectSQL += `\nHAVING traders.trade_type_id = :trade_type`;
     } else if (region) {
-        selectSQL += `\nWHERE region LIKE :region`;
+        selectSQL += `\nHAVING region LIKE :region`;
     }
 
     if (order_by) {
-        // Would be nice to validate order_by is a valid column
         selectSQL += `\nORDER BY ${order_by} ${!order_direction || order_direction.toLowerCase() === "asc" ? "ASC" : "DESC"}`;
     }
 
@@ -65,12 +62,15 @@ exports.getAllTraders = (req, res) => {
 exports.getTrader = (req, res) => {
     const { traderId } = req.params;
 
-    const selectSQL = `        
-        SELECT trader_id, name, username, email, traders.trade_type_id, region, availability, bio, trade_type_name
+    let selectSQL = `
+        SELECT traders.trader_id, name, username, email, traders.trade_type_id, region, availability, bio, trade_type_name, AVG(rating) as average_rating
         FROM traders 
+        LEFT JOIN ratings
+        ON traders.trader_id = ratings.trader_id
         LEFT JOIN trade_types
         ON traders.trade_type_id = trade_types.trade_type_id
-        WHERE trader_id = :traderId
+        WHERE traders.trader_id = :traderId
+        GROUP BY traders.trader_id
         `;
 
     conn.query(selectSQL, { traderId }, (err, rows) => {
@@ -82,6 +82,7 @@ exports.getTrader = (req, res) => {
                 message: err,
             });
         } else if (rows.length === 0) {
+            console.log(err);
             res.status(404);
             res.json({
                 status: "failure",
@@ -264,7 +265,7 @@ exports.putServiceForTrader = (req, res) => {
             title,
             description,
             pricingType,
-            basePrice: basePrice.toFixed(2),
+            basePrice: Number(basePrice).toFixed(2),
             traderId,
             serviceId,
         },
@@ -302,10 +303,13 @@ exports.postServiceForTrader = (req, res) => {
     const { errors } = validationResult(req);
 
     if (errors.length > 0) {
+        console.log(errors);
         res.status(400);
         res.json({
             status: "failure",
-            validationResults: errors,
+            validationResults: Object.fromEntries(
+                errors.map(({ path, msg }) => [path, msg]),
+            ),
         });
         return;
     }
@@ -319,7 +323,7 @@ exports.postServiceForTrader = (req, res) => {
             title,
             description,
             pricingType,
-            basePrice: basePrice.toFixed(2),
+            basePrice: Number(basePrice).toFixed(2),
             traderId,
         },
         (err, rows) => {
@@ -337,10 +341,8 @@ exports.postServiceForTrader = (req, res) => {
                     message: `Record ID ${rows.insertId} added`,
                 });
             }
-            console.log(rows);
         },
     );
-    console.log(typeof basePrice);
 };
 
 exports.deleteServiceForTrader = (req, res) => {
@@ -515,7 +517,6 @@ exports.postRatingForTrader = (req, res) => {
                 message: `Record ID ${rows.insertId} added`,
             });
         }
-        console.log(rows);
     });
 };
 

@@ -6,7 +6,7 @@ exports.serviceValidators = [
         .escape()
         .notEmpty()
         .withMessage("Title is a required field")
-        .matches(/^[a-zA-Z]+$/)
+        .matches(/^[a-zA-Z\s,.]+$/)
         .withMessage("Title has invalid characters"),
     body("description")
         .trim()

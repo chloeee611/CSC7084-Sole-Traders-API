@@ -9,4 +9,7 @@ router.put("/:bookingId", controller.putBooking);
 router.patch("/:bookingId/status", controller.patchBookingStatus);
 router.delete("/:bookingId", controller.deleteBooking);
 
+router.get("/data/date", controller.getBookingsByDate);
+router.get("/data/service", controller.getBookingsByService);
+
 module.exports = router;
