@@ -1,5 +1,6 @@
 const conn = require("../utils/dbconn");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 exports.postLogin = (req, res) => {
     const { username, password } = req.body;
@@ -47,9 +48,30 @@ exports.postLogin = (req, res) => {
             }
 
             // Password correct
+            let token;
+
+            try {
+                token = jwt.sign(
+                    {
+                        id: trader.trader_id,
+                        email: trader.email,
+                    },
+                    process.env.JWT_SECRET,
+                    { expiresIn: "1h" },
+                );
+            } catch (err2) {
+                console.log(err);
+                res.status(500);
+                res.json({
+                    message: err2,
+                });
+                return;
+            }
+
             res.status(200);
             res.json({
                 traderId: trader.trader_id,
+                token,
             });
         });
     });

@@ -1,0 +1,29 @@
+const jwt = require("jsonwebtoken");
+
+const validateJwt = (req, res, next) => {
+    const auth = req.headers["authorization"];
+    const token = auth?.split(" ")[1];
+
+    if (!token) {
+        console.log("Error - no token provided");
+        res.status(500);
+        res.json({
+            message: "Error - no token provided",
+        });
+        return;
+    }
+    try {
+        req.user = jwt.verify(token, process.env.JWT_SECRET);
+
+        next();
+    } catch (error) {
+        console.log(error);
+        res.status(500);
+        res.json({
+            message: "Error - invalid token",
+        });
+        return;
+    }
+};
+
+module.exports = validateJwt;

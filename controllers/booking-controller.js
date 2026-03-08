@@ -8,7 +8,8 @@ const {
 } = require("../utils/validators");
 
 exports.getAllBookings = (req, res) => {
-    const { status, order_by, order_direction, trader_id } = req.query;
+    const { status, order_by, order_direction } = req.query;
+    const { id: trader_id } = req.user;
 
     let selectSQL = `
                     SELECT * 
