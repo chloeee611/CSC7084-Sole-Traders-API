@@ -101,7 +101,7 @@ exports.postBooking = (req, res) => {
         validationResults["jobDescription"] = "Description is a required field";
     }
 
-    if (!validateRequiredNumberField(serviceId)) {
+    if (!validateRequiredNumberField(Number(serviceId))) {
         validationResults["serviceId"] = "You must select a service";
     }
 
