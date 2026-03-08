@@ -5,7 +5,7 @@ const validateJwt = require("../middleware/jwtMiddleware");
 
 router.get("/", validateJwt, controller.getAllBookings);
 router.get("/:bookingId", validateJwt, controller.getBooking);
-router.post("/", validateJwt, controller.postBooking);
+router.post("/", controller.postBooking);
 router.put("/:bookingId", validateJwt, controller.putBooking);
 router.patch("/:bookingId/status", validateJwt, controller.patchBookingStatus);
 router.delete("/:bookingId", validateJwt, controller.deleteBooking);
