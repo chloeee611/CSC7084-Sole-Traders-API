@@ -18,10 +18,18 @@ const validateJwt = (req, res, next) => {
         next();
     } catch (error) {
         console.log(error);
-        res.status(500);
-        res.json({
-            message: "Error - invalid token",
-        });
+        if (error instanceof jwt.TokenExpiredError) {
+            res.status(403);
+            res.json({
+                message: "Token has expired",
+            });
+        } else {
+            res.status(500);
+            res.json({
+                message: "Error - invalid token",
+            });
+        }
+
         return;
     }
 };
